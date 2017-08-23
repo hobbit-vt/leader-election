@@ -6,6 +6,9 @@ name := "leader-election"
 
 version := "0.1.0"
 
+resolvers += Resolver.bintrayRepo("hobbit-vt", "maven")
+licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
+
 libraryDependencies ++= Seq(
   "net.databinder.dispatch"     %% "dispatch-core"    % "0.13.1",
   "io.monix"                    %% "monix-execution"  % "2.3.0",
