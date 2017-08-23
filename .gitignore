@@ -1,0 +1,9 @@
+target
+project/project
+.idea
+/ddata-trading-replicator-*
+.classpath
+.cache-*
+.project
+.settings
+bin/

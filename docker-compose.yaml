@@ -1,0 +1,9 @@
+version: '2'
+
+services:
+
+  constructr-consul:
+    image: consul:latest
+    ports:
+      - "8500:8500"
+    command: [agent, -server, -bootstrap, -client=0.0.0.0, -ui]
