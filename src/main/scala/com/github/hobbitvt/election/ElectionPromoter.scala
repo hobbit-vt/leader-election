@@ -4,8 +4,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import com.typesafe.scalalogging.LazyLogging
 
-import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration.{ Duration, _ }
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
 
 /**

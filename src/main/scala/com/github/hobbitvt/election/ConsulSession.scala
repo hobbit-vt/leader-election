@@ -1,14 +1,12 @@
 package com.github.hobbitvt.election
 
 import com.typesafe.scalalogging.LazyLogging
-import dispatch._
 import io.circe.syntax._
 import io.circe.{ Json, parser }
 import monix.execution.misc.AsyncSemaphore
-import org.asynchttpclient.Response
 
-import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration.Duration
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * Represents session in consul
@@ -67,10 +65,8 @@ class ConsulSession(consulAddress: String, ttl: Duration)(implicit ec: Execution
       "LockDelay" -> "0s".asJson,
       "TTL" -> s"${ttl.toSeconds}s".asJson
     ).noSpaces
-    val req = url(s"$consulAddress/v1/session/create")
-      .setBody(body)
 
-    Http.default(req.PUT > identity[Response] _).map(rep => {
+    HttpClient.put(s"$consulAddress/v1/session/create", body).map(rep => {
       val content = rep.getResponseBody
       val maybeId = parser.parse(content).toOption
         .flatMap(jValue => jValue.hcursor.downField("ID").focus.flatMap(_.asString))
@@ -82,16 +78,14 @@ class ConsulSession(consulAddress: String, ttl: Duration)(implicit ec: Execution
   }
 
   private def destroy(id: String): Future[Unit] = {
-    val req = url(s"$consulAddress/session/destroy/$id")
-    Http.default(req.PUT > identity[Response] _).map(_ => ())
+    HttpClient.put(s"$consulAddress/session/destroy/$id").map(_ => ())
   }
 
   /**
    * Renews session id in consul
    */
   private def renew(id: String): Future[Unit] = {
-    val req = url(s"$consulAddress/v1/session/renew/$id")
-    Http.default(req.PUT > identity[Response] _).flatMap(rep => {
+    HttpClient.put(s"$consulAddress/v1/session/renew/$id").flatMap(rep => {
       rep.getStatusCode match {
         case 200 => Future.successful(scheduleRenew())
         case _ => clearSession()

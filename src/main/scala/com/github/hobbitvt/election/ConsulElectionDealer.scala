@@ -2,12 +2,10 @@ package com.github.hobbitvt.election
 
 import java.util.Base64
 
-import dispatch._
 import io.circe.parser
-import org.asynchttpclient.Response
 
-import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration.{ Duration, _ }
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * Election dealer which use consul as leader election algorithm
@@ -28,9 +26,7 @@ class ConsulElectionDealer(consulAddress: String, path: String, ttl: Duration)(i
    */
   override def tryAcquire(instanceId: InstanceId): Future[Boolean] = {
     session().flatMap(id => {
-      val req = url(s"$consulAddress/v1/kv/$path?acquire=$id")
-        .setBody(instanceId)
-      Http.default(req.PUT > identity[Response] _).map(rep => {
+      HttpClient.put(s"$consulAddress/v1/kv/$path?acquire=$id", instanceId).map(rep => {
         val content = rep.getResponseBody
         content match {
           case "true" => true
@@ -70,8 +66,7 @@ class ConsulElectionDealer(consulAddress: String, path: String, ttl: Duration)(i
    */
   override def release(): Future[Unit] = {
     session().flatMap(id => {
-      val req = url(s"$consulAddress/v1/kv/$path?release=$id")
-      Http.default(req.PUT > identity[Response] _).map(rep => {
+      HttpClient.put(s"$consulAddress/v1/kv/$path?release=$id").map(rep => {
         rep.getStatusCode match {
           case 200 =>
           case _ =>
@@ -90,8 +85,7 @@ class ConsulElectionDealer(consulAddress: String, path: String, ttl: Duration)(i
 
   private def getLeader(modifyIndex: Long, howLong: Duration): Future[ElectionResult] = {
     val wait = howLong.toSeconds + "s"
-    val req = url(s"$consulAddress/v1/kv/$path?index=$modifyIndex&wait=$wait")
-    Http.default(req.GET > identity[Response] _).map(rep => {
+    HttpClient.get(s"$consulAddress/v1/kv/$path?index=$modifyIndex&wait=$wait").map(rep => {
       val maybeJson = parser.parse(rep.getResponseBody)
       val maybeIndex = maybeJson.toOption.flatMap(j => j.hcursor.downArray.downField("ModifyIndex").focus.flatMap(_.asNumber.flatMap(_.toLong)))
       val maybeSession = maybeJson.toOption.flatMap(j => j.hcursor.downArray.downField("Session").focus.flatMap(_.asString))

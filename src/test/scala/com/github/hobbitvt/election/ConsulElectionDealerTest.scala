@@ -1,13 +1,11 @@
 package com.github.hobbitvt.election
 
-import dispatch._
-import org.asynchttpclient.Response
 import org.scalatest.{ FunSpec, Matchers }
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{ Duration, _ }
+import scala.concurrent.{ Await, Future }
 
 
 class ConsulElectionDealerTest extends FunSpec with Matchers {
@@ -185,9 +183,10 @@ class ConsulElectionDealerTest extends FunSpec with Matchers {
       info("Check that service1 is still a leader, because ttl isn't expired")
       electionDealer2.getLeader.await shouldEqual Some(service1)
       info("Wait...")
-      wait(ttl * 2)
+      wait(ttl * 3)
       info("Check that none is a leader")
-      electionDealer2.getLeader.await shouldEqual None
+      val t = electionDealer2.getLeader.await
+      t shouldEqual None
 
       electionDealer1.close().await
       electionDealer2.close().await
@@ -199,13 +198,11 @@ class ConsulElectionDealerTest extends FunSpec with Matchers {
   }
 
   def rmKey(key: String): Unit = {
-    val req = url(s"$consul/v1/kv/$key")
-    Await.result(Http.default(req.DELETE > identity[Response] _), Duration.Inf)
+    Await.result(HttpClient.delete(s"$consul/v1/kv/$key"), Duration.Inf)
   }
 
   def mkKey(key: String): Unit = {
-    val req = url(s"$consul/v1/kv/$key")
-    Await.result(Http.default(req.PUT > identity[Response] _), Duration.Inf)
+    Await.result(HttpClient.put(s"$consul/v1/kv/$key"), Duration.Inf)
   }
 
   def onExit(fn: => Unit): Unit = {
