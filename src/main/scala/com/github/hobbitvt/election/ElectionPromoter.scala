@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration.{ Duration, _ }
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ ExecutionContext, Future, Promise }
 import scala.util.{ Failure, Success }
 
 /**
@@ -27,6 +27,7 @@ class ElectionPromoter(
   @volatile
   private var closed = false
   private val started = new AtomicBoolean(false)
+  private val done = Promise[Unit]
 
   val event = new Event[Option[InstanceId]]
 
@@ -39,6 +40,10 @@ class ElectionPromoter(
       acquire()
     }
     event
+  }
+
+  def whenCompletelyStarted: Future[Unit] = {
+    done.future
   }
 
   /**
@@ -72,6 +77,7 @@ class ElectionPromoter(
     if (!closed) {
       electionDealer.tryAcquire(instanceId).andThen({
         case Success(elected) =>
+          done.trySuccess(())
           val actualLeader = if (elected) {
             val leader = Some(instanceId)
             Future.successful(leader)
@@ -85,6 +91,7 @@ class ElectionPromoter(
               case Failure(ex) => scheduleRecovery(ex)
             })
         case Failure(ex) =>
+          done.trySuccess(())
           scheduleRecovery(ex)
       })
     }

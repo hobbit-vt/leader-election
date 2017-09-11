@@ -78,7 +78,7 @@ class ConsulSession(consulAddress: String, ttl: Duration)(implicit ec: Execution
   }
 
   private def destroy(id: String): Future[Unit] = {
-    HttpClient.put(s"$consulAddress/session/destroy/$id").map(_ => ())
+    HttpClient.put(s"$consulAddress/v1/session/destroy/$id").map(_ => ())
   }
 
   /**

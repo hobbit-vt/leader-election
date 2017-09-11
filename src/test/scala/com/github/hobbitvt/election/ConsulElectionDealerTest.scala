@@ -180,13 +180,8 @@ class ConsulElectionDealerTest extends FunSpec with Matchers {
       electionDealer1.getLeader.await shouldEqual Some(service1)
       info("Close election dealer")
       electionDealer1.close().await
-      info("Check that service1 is still a leader, because ttl isn't expired")
-      electionDealer2.getLeader.await shouldEqual Some(service1)
-      info("Wait...")
-      wait(ttl * 3)
       info("Check that none is a leader")
-      val t = electionDealer2.getLeader.await
-      t shouldEqual None
+      electionDealer2.getLeader.await shouldEqual None
 
       electionDealer1.close().await
       electionDealer2.close().await

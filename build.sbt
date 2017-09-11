@@ -4,7 +4,7 @@ organization := "com.github.hobbitvt"
 
 name := "leader-election"
 
-version := "0.1.2"
+version := "0.1.3"
 
 resolvers += Resolver.bintrayRepo("hobbit-vt", "maven")
 licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
