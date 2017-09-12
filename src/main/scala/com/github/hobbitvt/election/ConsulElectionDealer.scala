@@ -27,7 +27,7 @@ class ConsulElectionDealer(consulAddress: String, path: String, ttl: Duration)(i
   override def tryAcquire(instanceId: InstanceId): Future[Boolean] = {
     session().flatMap(id => {
       HttpClient.put(s"$consulAddress/v1/kv/$path?acquire=$id", instanceId).map(rep => {
-        val content = rep.getResponseBody
+        val content = rep.getResponseBody.trim
         content match {
           case "true" => true
           case "false" => false
