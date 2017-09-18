@@ -17,7 +17,7 @@ import scala.util.{ Failure, Success }
  */
 class ElectionPromoter(
     val electionDealer: ElectionDealer,
-    instanceId: ElectionDealer.InstanceId,
+    val instanceId: ElectionDealer.InstanceId,
     failRecoveryInterval: Duration
 )(implicit ec: ExecutionContext) extends LazyLogging {
   import ElectionDealer.InstanceId
