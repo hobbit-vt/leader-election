@@ -77,7 +77,6 @@ class ElectionPromoter(
     if (!closed) {
       electionDealer.tryAcquire(instanceId).andThen({
         case Success(elected) =>
-          done.trySuccess(())
           val actualLeader = if (elected) {
             val leader = Some(instanceId)
             Future.successful(leader)
@@ -91,7 +90,6 @@ class ElectionPromoter(
               case Failure(ex) => scheduleRecovery(ex)
             })
         case Failure(ex) =>
-          done.trySuccess(())
           scheduleRecovery(ex)
       })
     }
@@ -104,6 +102,7 @@ class ElectionPromoter(
     lastKnownLeader: Option[InstanceId]
   ): Future[Unit] = {
     keepLeader(lastKnownLeader)
+    done.trySuccess()
     lastKnownLeader match {
       case Some(_) if !closed =>
         electionDealer.waitForLeader(30.seconds, lastKnownLeader)
@@ -127,7 +126,7 @@ class ElectionPromoter(
    * Schedule recovery process
    */
   private def scheduleRecovery(ex: Throwable): Unit = {
-    event.notify(None)
+    keepLeader(None)
     logger.warn(s"Exception's been risen during promotion of [$instanceId] as a leader", ex)
     if (!closed) {
       SingleThreadedTimer.Default.schedule(failRecoveryInterval) {

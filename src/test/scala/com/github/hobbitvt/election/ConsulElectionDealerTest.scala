@@ -186,6 +186,24 @@ class ConsulElectionDealerTest extends FunSpec with Matchers {
       electionDealer1.close().await
       electionDealer2.close().await
     }
+
+    it("should wait for a promoter completely start") {
+      val key = java.util.UUID.randomUUID().toString
+      val dealer1 = new ConsulElectionDealer(consul, key, 10.seconds)
+      val dealer2 = new ConsulElectionDealer(consul, key, 10.seconds)
+      val promoter1 = new ElectionPromoter(dealer1, "p1", 5.seconds)
+      val promoter2 = new ElectionPromoter(dealer2, "p2", 5.seconds)
+      promoter1.start()
+      promoter2.start()
+
+      Future.sequence(Seq(
+        promoter2.whenCompletelyStarted,
+        promoter1.whenCompletelyStarted
+      )).await
+
+      promoter1.isLeader shouldEqual !promoter2.isLeader
+      promoter2.isLeader shouldEqual !promoter1.isLeader
+    }
   }
 
   def wait(duration: Duration): Unit = {
