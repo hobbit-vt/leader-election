@@ -61,20 +61,22 @@ class ConsulSession(consulAddress: String, ttl: Duration)(implicit ec: Execution
    * Create session in consul
    */
   private def create(): Future[String] = {
+    def parseId(str: String) = parser.parse(str).toOption.flatMap(_.hcursor.downField("ID").focus.flatMap(_.asString))
+
     val body = Json.obj(
       "LockDelay" -> "0s".asJson,
       "TTL" -> s"${ttl.toSeconds}s".asJson
     ).noSpaces
 
-    HttpClient.put(s"$consulAddress/v1/session/create", body).map(rep => {
-      val content = rep.getResponseBody
-      val maybeId = parser.parse(content).toOption
-        .flatMap(jValue => jValue.hcursor.downField("ID").focus.flatMap(_.asString))
-      maybeId match {
-        case Some(id) => id
-        case None => throw new IllegalArgumentException(s"Can't parse create payload $content")
+    HttpClient.put(s"$consulAddress/v1/session/create", body).map { rep =>
+      (rep.getStatusCode, rep.getResponseBody) match {
+        case (200, content) =>
+          parseId(content)
+            .getOrElse(throw new IllegalArgumentException(s"Can't parse session create response [$content]"))
+        case (code, content) =>
+          throw new Error(s"Consul failed to create session with code $code and content [$content]")
       }
-    })
+    }
   }
 
   private def destroy(id: String): Future[Unit] = {
