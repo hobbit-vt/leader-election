@@ -1,10 +1,10 @@
-scalaVersion := "2.12.3"
+scalaVersion := "2.12.6"
 
 organization := "com.github.hobbitvt"
 
 name := "leader-election"
 
-version := "0.1.8"
+version := "0.1.9"
 
 resolvers += Resolver.bintrayRepo("hobbit-vt", "maven")
 licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
