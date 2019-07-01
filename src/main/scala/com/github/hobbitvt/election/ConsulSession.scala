@@ -3,7 +3,9 @@ package com.github.hobbitvt.election
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
 import io.circe.{ Json, parser }
-import monix.execution.misc.AsyncSemaphore
+import cats.implicits._
+
+import monix.execution.AsyncSemaphore
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
@@ -23,7 +25,7 @@ class ConsulSession(consulAddress: String, ttl: Duration)(implicit ec: Execution
    * Obtains session id
    */
   override def apply(): Future[String] = {
-    lock.greenLight(() => {
+    lock.withPermit(() => {
       maybeId match {
         case _ if closed => Future.failed(new UnsupportedOperationException("Can't retrieve already closed session"))
         case Some(id) => Future.successful(id)
@@ -39,7 +41,7 @@ class ConsulSession(consulAddress: String, ttl: Duration)(implicit ec: Execution
   }
 
   def close(): Future[Unit] = {
-    lock.greenLight(() => {
+    lock.withPermit(() => {
       closed = true
       maybeId.map(destroy)
         .getOrElse(Future.successful(()))
@@ -51,7 +53,7 @@ class ConsulSession(consulAddress: String, ttl: Duration)(implicit ec: Execution
    */
   private def clearSession(): Future[Unit] = {
     logger.info(s"ConsulSession $maybeId was destroyed.")
-    lock.greenLight(() => {
+    lock.withPermit(() => {
       maybeId = None
       Future.successful(())
     })
