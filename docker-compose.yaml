@@ -2,6 +2,6 @@ version: '2'
 
 services:
   consul:
-    image: consul:1.1.0
+    image: consul:1.9.3
     ports:
       - "8500:8500"
